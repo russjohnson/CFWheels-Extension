@@ -1,3 +1,11 @@
+
+<!--- we should be able to fire the controller scaffold with our own set of actions for the crud and fire the model scaffold to generate a default model --->
+
+
+
+
+
+<!---
 <cffunction name="generateScaffold" access="public" returnType="string" hint="Creates a Model a Controller and the Views for the name of the argument passed" output="false">
 		<cfargument name="name" type="string" required="true" hint="Name of the object to scaffold">
 		<cfargument name="type" type="string" required="true" default="everything" hint="Type of generation to execute, values are: everything, controller, model">
@@ -453,4 +461,4 @@
 	    <cfdirectory action="list" directory="#loc.templateFolderPath#" name="loc.templateList">
 	            
 	    <cfreturn loc.templateList>
-	</cffunction>
+	</cffunction>--->

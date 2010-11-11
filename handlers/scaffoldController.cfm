@@ -12,10 +12,10 @@
 <!-- currently not planning to support the cf8 script style controllers -->
 <cfif inputStruct.script>
 	<cffile action="read" file="#ExpandPath('../')#/code/templates/controller_script.cfm" variable="controllerContent">
-	<cffile action="read" file="#ExpandPath('../')#/code/templates/eventMethod_script.cfm" variable="eventMethodContent">
+	<cffile action="read" file="#ExpandPath('../')#/code/templates/action_script.cfm" variable="eventMethodContent">
 <cfelse>
 	<cffile action="read" file="#ExpandPath('../')#/code/templates/controller.cfm" variable="controllerContent">
-	<cffile action="read" file="#ExpandPath('../')#/code/templates/eventMethod.cfm" variable="eventMethodContent">
+	<cffile action="read" file="#ExpandPath('../')#/code/templates/action.cfm" variable="eventMethodContent">
 </cfif>
 
 <!-- loop through the methods and add the methods to our template -->
@@ -61,7 +61,7 @@
 			</params>
 		</command>
 	</commands>
-	<dialog width="550" height="350" title="ColdBox Event Handler Wizard" image="includes/images/cfwheels.png"/>  
+	<dialog width="550" height="350" title="CFWheels Controller Scaffold" image="includes/images/cfwheels-logo.png"/>  
 	<body><![CDATA[
 	<html>
 		<head>

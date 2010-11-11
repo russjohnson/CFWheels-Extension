@@ -1,5 +1,3 @@
-
-
 <cfif structKeyExists(data.event.ide,"projectview")>
 	<cfset expandLocation	= data.event.ide.projectview.resource.xmlAttributes.path >
 	<cfset projectname		= data.event.ide.projectview.xmlAttributes.projectname>
@@ -40,7 +38,7 @@
 			</params>
 		</command>-->
 	</commands>
-	<dialog width="600" height="250" title="CFWheels Application Scaffold" image="includes/images/ColdBox_Icon.png"/>  
+	<dialog width="600" height="250" title="CFWheels Application Scaffold" image="includes/images/coldbox-logo.png"/>  
 	<body><![CDATA[
 	<html>
 		<head>
