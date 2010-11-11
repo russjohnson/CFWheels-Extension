@@ -1,0 +1,71 @@
+<application>
+
+	<name>CFWheels Builder</name>
+	<author>Russ Johnson</author>
+	<version>1.0</version>
+	<email>russ@angry-fly.com</email>	
+	<description>CFWheels ColdFusion Builder Extension</description>	
+	<license>Apache License, Version 2.0</license>
+
+	<!-- MENUS -->
+	<menucontributions>
+		
+		<contribution target="projectview">
+			<!-- PROJECT MENU ITEMS -->
+			<menu name="CFWheels Framework">
+								
+				<action name="New Wheels Application" handlerid="newApplication" showResponse="true">
+					<filters>
+						<filter type="project" />
+					</filters>
+				</action>
+				
+				<!-- These menu items for code generation are context specific -->
+				<!-- Based on the folder you click on, you get the correct options -->
+					
+				<action name="New Controller" handlerid="newController" showresponse="true">
+					<filters><filter type="folder" pattern="controllers"/></filters>
+					<!-- todo: add the script options -->			
+				</action>
+				
+				<action name="New Model" handlerid="newModel" showResponse="true">
+					<filters><filter type="folder" pattern="models"/></filters>
+				</action>
+				
+				<action name="New View" handlerid="newView" showResponse="true">
+					<filters><filter type="folder" pattern="views"/></filters>
+					<!-- these should be model specific based on the model folder you click on -->
+				</action>
+				
+			</menu>
+		</contribution>
+		
+		<contribution target="rdsview">
+			
+			<menu name="CFWheels DB Functions">
+				<action name="Scaffold Table" handlerid="scaffoldTable" showResponse="true">
+					
+				</action>
+			</menu>
+			
+		</contribution>
+				
+	</menucontributions>
+	
+	<!-- EVENTS -->
+	<events>
+		<event type="onProjectCreate" handlerid="newApplication"/>
+	</events>
+	
+	<!-- HANDLERS -->
+	<handlers>
+		
+		<!-- generators -->
+		<handler id="newApplication" type="cfm" filename="scaffoldApplication.cfm" />
+		
+		<handler id="scaffoldTable" type="cfm" filename="scaffoldTable.cfm" />
+		<handler id="newController" type="cfm" filename="controllerSetup.cfm" />
+	</handlers>
+
+</application>
+
