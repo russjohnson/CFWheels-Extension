@@ -8,12 +8,14 @@
 				   label="Project Root" 
 				   tooltip="Select the root of your CFWheels project" 
 				   type="projectdir" 
-				   required="true"/>
+				   required="true"
+				   helpmessage="Select the root of your CFWheels project. We use this to determine where to save the scaffolded files."/>
 		
 			<input name="scaffoldType"
 				   label="Elements to Scaffold"
 				   type="list"
 				   required="true"
+				   default="Everything"
 				   tooltip="Select which elements you would like to scaffold"
 				   helpmessage="You can choose to scaffold a combination of elements from a table based on conventions">
 				   		<option value="Everything"/>

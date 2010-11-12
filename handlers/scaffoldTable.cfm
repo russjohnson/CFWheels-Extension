@@ -11,7 +11,7 @@
 	projectRoot = inputStruct.projectRoot & "/";
 	modelPath = projectRoot & "models";
 	controllerPath = projectRoot & "controllers";
-	viewPath = projectRoot & "views";
+	viewPath = projectRoot & "views/";
 	
 	templatePath = expandPath('../') & "/code/templates/scaffold/";
 	
@@ -59,8 +59,7 @@
 	<body><![CDATA[
 	<html>
 		<head>
-			<base href="" />
-			<link href="includes/css/styles.css" type="text/css" rel="stylesheet">
+			<link href="<cfoutput>#request.extensionLocation#</cfoutput>/includes/css/styles.css" type="text/css" rel="stylesheet">
 			<script type="text/javascript" src="includes/js/jquery.latest.min.js"></script>
 		</head>
 		<body>
@@ -117,7 +116,7 @@
 	            <cfset loc.entryForm = generateEntryFormFromModel(arguments.name)>
 	            <cfset loc.editForm = generateEditFormFromModel(arguments.name)>
 	            <cfset loc.indexListing = generateListingViewFromModel(arguments.name)>
-	            <cfset loc.showListing = $generateShowViewFromModel(arguments.name)>
+	            <cfset loc.showListing = generateShowViewFromModel(arguments.name)>
 	            
 				<!--- Replace the placeholders names --->
 	    		<cfset loc.fileIndex = replacePlaceHolders(loc.fileIndex, arguments.name)>
@@ -282,32 +281,32 @@
 		<cfswitch expression="#arguments.columnObject.cfsqltype#">
 			<cfcase value="cf_sql_bit,cf_sql_tinyint" delimiters=",">
 				<!--- Return a checkbox --->
-				<cfset loc.fieldTag = "checkBox(objectName='#arguments.objectName#', property='#arguments.columnObject.name#', label='#humanize(arguments.columnObject.name)#')">
+				<cfset loc.fieldTag = "checkBox(objectName='#arguments.objectName#', property='#arguments.columnObject.name#', label='#Util.humanize(arguments.columnObject.name)#')">
 			</cfcase>
 
 			<cfcase value="cf_sql_longvarchar">
 				<!--- Return a textarea --->
-				<cfset loc.fieldTag = "textArea(objectName='#arguments.objectName#', property='#arguments.columnObject.name#', label='#humanize(arguments.columnObject.name)#')">
+				<cfset loc.fieldTag = "textArea(objectName='#arguments.objectName#', property='#arguments.columnObject.name#', label='#Util.humanize(arguments.columnObject.name)#')">
 			</cfcase>
 
 			<cfcase value="cf_sql_date">
 				<!--- Return a calendar --->
-				<cfset loc.fieldTag = "dateSelect(objectName='#arguments.objectName#', property='#arguments.columnObject.name#', label='#humanize(arguments.columnObject.name)#')">
+				<cfset loc.fieldTag = "dateSelect(objectName='#arguments.objectName#', property='#arguments.columnObject.name#', label='#Util.humanize(arguments.columnObject.name)#')">
 			</cfcase>
 
 			<cfcase value="cf_sql_time">
 				<!--- Return a time picker --->
-				<cfset loc.fieldTag = "timeSelect(objectName='#arguments.objectName#', property='#arguments.columnObject.name#', label='#humanize(arguments.columnObject.name)#')">
+				<cfset loc.fieldTag = "timeSelect(objectName='#arguments.objectName#', property='#arguments.columnObject.name#', label='#Util.humanize(arguments.columnObject.name)#')">
 			</cfcase>
 
 			<cfcase value="cf_sql_timestamp">
 				<!--- Return a calendar and time picker --->
-				<cfset loc.fieldTag = "dateTimeSelect(objectName='#arguments.objectName#', property='#arguments.columnObject.name#', dateOrder='year,month,day', monthDisplay='abbreviations', label='#humanize(arguments.columnObject.name)#')">
+				<cfset loc.fieldTag = "dateTimeSelect(objectName='#arguments.objectName#', property='#arguments.columnObject.name#', dateOrder='year,month,day', monthDisplay='abbreviations', label='#Util.humanize(arguments.columnObject.name)#')">
 			</cfcase>
 
 			<cfdefaultcase>
 				<!--- Return a text if everything fails --->
-				<cfset loc.fieldTag = "textField(objectName='#arguments.objectName#', property='#arguments.columnObject.name#', label='#humanize(arguments.columnObject.name)#')">
+				<cfset loc.fieldTag = "textField(objectName='#arguments.objectName#', property='#arguments.columnObject.name#', label='#Util.humanize(arguments.columnObject.name)#')">
 			</cfdefaultcase>
 		</cfswitch>
 		
@@ -331,7 +330,7 @@
 		<cfsavecontent variable="loc.form">
 			<cfoutput>
 				<cfloop from="1" to="#arrayLen(loc.columns)#" index="i">
-					[cfcol header="#Util.humanize(loc.column[i].name)#" text="###loc.column[i].name###" /]
+					[cfcol header="#Util.humanize(loc.columns[i].name)#" text="###loc.columns[i].name###" /]
 				</cfloop>
 			</cfoutput>
 		</cfsavecontent>
@@ -361,8 +360,8 @@
 		<cfsavecontent variable="loc.form">
 			<cfoutput>
 				<cfloop from="1" to="#arrayLen(loc.columns)#" index="i">
-					<p><label>#Util.humanize(loc.column[i].name)#</label> <br />
-						###loc.nameInSingularLowercase & "." & loc.column[i].name###</p>
+					<p><label>#Util.humanize(loc.columns[i].name)#</label> <br />
+						###loc.nameInSingularLowercase & "." & loc.columns[i].name###</p>
 				</cfloop>
 			</cfoutput>
 		</cfsavecontent>
