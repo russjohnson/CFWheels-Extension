@@ -1,12 +1,96 @@
 
-<!--- we should be able to fire the controller scaffold with our own set of actions for the crud and fire the model scaffold to generate a default model --->
+<cfscript>
+	databaseName = data.event.ide.rdsview.database.xmlAttributes.name;
+	tableName = data.event.ide.rdsview.database.table.xmlAttributes.name;
+	
+	projectRoot = inputStruct.projectRoot & "/";
+	modelPath = projectRoot & "models";
+	controllerPath = projectRoot & "controllers";
+	viewPath = projectRoot & "views";
+	
+	templatePath = expandPath('../') & "/code/templates/scaffold/";
+	
+	if(inputStruct.script){
+		template = "cf9script";
+	} else {
+		template = "default";
+	}
+	
+	// our return message
+	message = "";
+	
+	// get some objects
+	Util = request.utility;
+</cfscript>
+
+
+<cfif inputStruct.scaffoldType is "Controller Only">
+
+	<cfset message = message & generateController(Util.singularize(tableName), template)>
+
+<cfelseif inputStruct.scaffoldType is "Model Only">
+
+	<cfset message = message & generateModel(Util.singularize(tableName), template)>
+
+<cfelse>
+
+	<cfset message = message & generateModel(Util.singularize(tableName), template) & "<br/>">
+	<cfset message = message & generateController(Util.singularize(tableName), template) & "<br/>">
+
+</cfif>
+
+
+
+<cfheader name="Content-Type" value="text/xml">  
+<cfoutput>
+<response status="success" showresponse="true">  
+<ide>  
+	<commands>
+		<command type="RefreshFolder">
+			<params>
+			    <param key="foldername" value="#inputStruct.projectRoot#" />
+			</params>
+		</command>
+	</commands>
+	<dialog width="550" height="350" title="CFWheels Table Scaffold" image="includes/images/cfwheels-logo.png"/>  
+	<body><![CDATA[
+	<html>
+		<head>
+			<base href="" />
+			<link href="includes/css/styles.css" type="text/css" rel="stylesheet">
+			<script type="text/javascript" src="includes/js/jquery.latest.min.js"></script>
+		</head>
+		<body>
+			<div class="strong">Generated scaffolding for #tableName#</div>
+			<p>#message#</p>
+		</body>
+	</html>	
+	]]></body>
+</ide>
+</response>
+</cfoutput>
+
+<!-- currently not planning to support the cf8 script style controllers -->
+<!---<cfif inputStruct.script>
+	<cffile action="read" file="#ExpandPath('../')#/code/templates/controller_script.cfm" variable="controllerContent">
+	<cffile action="read" file="#ExpandPath('../')#/code/templates/action_script.cfm" variable="actionContent">
+<cfelse>
+	<cffile action="read" file="#ExpandPath('../')#/code/templates/controller.cfm" variable="controllerContent">
+	<cffile action="read" file="#ExpandPath('../')#/code/templates/action.cfm" variable="actionContent">
+</cfif>
+
+<cfif inputStruct.script>
+	<cffile action="read" file="#ExpandPath('../')#/code/templates/model_script.cfm" variable="modelContent">
+	<cffile action="read" file="#ExpandPath('../')#/code/templates/model_method_script.cfm" variable="methodContent">
+<cfelse>
+	<cffile action="read" file="#ExpandPath('../')#/code/templates/model.cfm" variable="modelContent">
+	<cffile action="read" file="#ExpandPath('../')#/code/templates/model_method.cfm" variable="methodContent">
+</cfif>--->
 
 
 
 
-
-<!---
-<cffunction name="generateScaffold" access="public" returnType="string" hint="Creates a Model a Controller and the Views for the name of the argument passed" output="false">
+	<cffunction name="generateScaffold" access="public" returnType="string" hint="Creates a Model a Controller and the Views for the name of the argument passed" output="false">
 		<cfargument name="name" type="string" required="true" hint="Name of the object to scaffold">
 		<cfargument name="type" type="string" required="true" default="everything" hint="Type of generation to execute, values are: everything, controller, model">
 		<cfargument name="template" type="string" required="true" default="default" hint="The template to use for generating the scaffolds.">
@@ -38,39 +122,9 @@
 		<cfreturn loc.message>	    
 	</cffunction>
 	
-	<cffunction name="$checkIfFileExists" access="public" returntype="boolean" hint="Checks if the desired object is already created" output="false">
-		<cfargument name="name" type="string" required="true" hint="Name of the file to search for">
-	    <cfargument name="type" type="string" required="true" hint="Type of file to look for (Model, View, Controller)">
-	    
-	    <cfset var loc = {}>
-	 	
-	    <!--- Expand the target folder --->
-	    <cfswitch expression="#arguments.type#">
-	    	<cfcase value="Model">
-	    		<cfset loc.targetFolderPath = expandPath("models/")>
-	        </cfcase>
-	        <cfcase value="View">
-	    		<cfset loc.targetFolderPath = expandPath("views/" & LCase(pluralize(arguments.name)))>
-	        </cfcase>
-	        <cfcase value="Controller">
-	        	<cfset loc.targetFolderPath = expandPath("controllers/")>
-	        </cfcase>
-	    </cfswitch>
-	    
-	    <!--- Find the names of all the files in the targeted folder --->
-	    <cfdirectory name="loc.files" action="list" directory="#loc.targetFolderPath#" type="file">
-	    
-	    <!--- Check if the desired file is already in the targeted folder --->
-		<cfif FindNoCase(arguments.name, ValueList(loc.files.name)) GT 0 OR DirectoryExists(loc.targetFolderPath) AND arguments.type IS "View">
-	    	<cfset loc.wasFound = true>
-	    <cfelse>
-	    	<cfset loc.wasFound = false>
-		</cfif>
-	    
-	    <cfreturn loc.wasFound>
-	</cffunction>
 	
-	<cffunction name="$moveFileToFolder" access="public" returntype="void" hint="Checks if the desired Model is already created" output="false">
+	
+	<cffunction name="moveFileToFolder" access="public" returntype="void" hint="Checks if the desired Model is already created" output="false">
 		<cfargument name="name" type="string" required="true" hint="Name to set the file when moved">
 	    <cfargument name="type" type="string" required="true" hint="Type of file to move for (Model, View, Controller)">
 	    <cfargument name="template" type="string" required="true" default="default">
@@ -82,17 +136,14 @@
 	    	<cfcase value="Model">
 	            
 				<!--- Expand the from and destination folders --->
-	    		<cfset loc.fromFolderPath = expandPath("plugins/scaffold/templates/#arguments.template#")>
-				<cfset loc.destinationFolderPath = expandPath("models")>
+	    		<cfset loc.fromFolderPath = templatePath & arguments.template>
+				<cfset loc.destinationFolderPath = modelPath>
 	            
 	            <!--- Read the template file --->
                 <cffile action="read" file="#loc.fromFolderPath#/model.cfm" variable="loc.file">
 	            
-	            <!--- Replace the placeholders with real data to the user 
-	    		<cfset loc.file = $replacePlaceHolders(loc.file, arguments.name)> --->
-	            
 	            <!--- Write the file in the corresponding folder --->
-	            <cffile action="write" file="#loc.destinationFolderPath#/#capitalize(arguments.name)#.cfc" output="#loc.file#" mode="777"> 
+	            <cffile action="write" file="#loc.destinationFolderPath#/#Util.capitalize(arguments.name)#.cfc" output="#loc.file#" mode="777"> 
 	        </cfcase>
 	        
 	        <cfcase value="View">
@@ -144,17 +195,17 @@
 	        
 	        <cfcase value="Controller">
 	        	<!--- Expand the from and destination folders --->
-	    		<cfset loc.fromFolderPath = expandPath("plugins/scaffold/templates/#arguments.template#")>
-	            <cfset loc.destinationFolderPath = expandPath("controllers")>
+	    		<cfset loc.fromFolderPath = templatePath & arguments.template>
+	            <cfset loc.destinationFolderPath = controllerPath>
 	            
 	            <!--- Read the template file --->
 	            <cffile action="read" file="#loc.fromFolderPath#/controller.cfm" variable="loc.file">
 	            
 				<!--- Replace the placeholders with real data to the user --->
-	    		<cfset loc.file = $replacePlaceHolders(loc.file, arguments.name)>
+	    		<cfset loc.file = replacePlaceHolders(loc.file, arguments.name)>
 	            
 	            <!--- Write the file in the corresponding folder --->
-	            <cffile action="write" file="#loc.destinationFolderPath#/#capitalize(pluralize(arguments.name))#.cfc" output="#loc.file#" mode="777"> 
+	            <cffile action="write" file="#loc.destinationFolderPath#/#Util.capitalize(Util.pluralize(arguments.name))#.cfc" output="#loc.file#" mode="777"> 
 	        </cfcase>
 	        
 	        <cfdefaultcase>
@@ -164,21 +215,22 @@
 	    
 	</cffunction>
 	
-	<cffunction name="$replacePlaceHolders" access="public" returntype="string" hint="Replaces the placeholders in the templates" output="false">
+	<cffunction name="replacePlaceHolders" access="public" returntype="string" hint="Replaces the placeholders in the templates" output="false">
 		<cfargument name="content" type="string" required="true" hint="The content where the placeholders are located for replacing">
 	    <cfargument name="value" type="string" required="true" hint="The value to replace the placeholders with">
 	    
 	    <cfset var loc = {}>
 	    
 	    <!--- Find all occurences of [NamePluralLowercaseDeHumanized] and replace it --->
-	    <cfset loc.replacedContent = ReplaceNoCase(arguments.content, "[NamePluralLowercaseDeHumanized]", LCase($replaceUppercaseWithDash(pluralize(arguments.value))), "All")>
+	    <cfset loc.replacedContent = ReplaceNoCase(arguments.content, "[NamePluralLowercaseDeHumanized]", LCase(Util.replaceUppercaseWithDash(Util.pluralize(arguments.value))), "All")>
 	    <!--- Find all occurences of [NamePluralLowercase] and replace it --->
-	    <cfset loc.replacedContent = ReplaceNoCase(loc.replacedContent, "[NamePluralLowercase]", LCase(pluralize(arguments.value)), "All")>
+	    <cfset loc.replacedContent = ReplaceNoCase(loc.replacedContent, "[NamePluralLowercase]", LCase(Util.pluralize(arguments.value)), "All")>
 	    <!--- Find all occurences of [NameSingularUppercase] and replace it --->
-	    <cfset loc.replacedContent = ReplaceNoCase(loc.replacedContent, "[NameSingularUppercase]", capitalize(arguments.value), "All")>
+	    <cfset loc.replacedContent = ReplaceNoCase(loc.replacedContent, "[NameSingularUppercase]", Util.capitalize(arguments.value), "All")>
 	    <!--- Find all occurences of [NameSingularLowercase] and replace it--->
 	    <cfset loc.replacedContent = ReplaceNoCase(loc.replacedContent, "[NameSingularLowercase]", LCase(arguments.value), "All")>
-	    <!--- Find all occurences of [PrimaryKey] and replace it with the actual primary key(s) --->
+	    
+		<!--- Find all occurences of [PrimaryKey] and replace it with the actual primary key(s) --->
 	    <cfset loc.replacedContent = ReplaceNoCase(loc.replacedContent, "[PrimaryKey]", model(LCase(arguments.value)).primaryKey(), "All")>
 	    
 	    <cfreturn loc.replacedContent>
@@ -378,17 +430,17 @@
 		<cfreturn loc.form>
 	</cffunction>
 	
-	<cffunction name="$generateModel" access="public" returnType="string" hint="Creates a Model for the name of the argument passed" output="false">
+	<cffunction name="generateModel" access="public" returnType="string" hint="Creates a Model for the name of the argument passed" output="false">
 		<cfargument name="name" type="string" required="true" hint="Name of the object">
 		<cfargument name="template" type="string" required="true" default="default">
 		<cfset var loc = {}>
 		
 		<!--- Check that the file has not been already created --->
-		<cfif $checkIfFileExists(arguments.name, "Model")>
-		    <cfset loc.message = "File 'models/#capitalize(arguments.name)#.cfc' already exists so skipped.">
+		<cfif Util.fileExists(arguments.name, "Model", projectRoot)>
+		    <cfset loc.message = "File 'models/#Util.capitalize(arguments.name)#.cfc' already exists so skipped.">
 		<cfelse>
-			<cfset $moveFileToFolder(arguments.name, "Model", arguments.template)>
-		    <cfset loc.message = "File 'models/#capitalize(arguments.name)#.cfc' created.">
+			<cfset moveFileToFolder(arguments.name, "Model", arguments.template)>
+		    <cfset loc.message = "File 'models/#Util.capitalize(arguments.name)#.cfc' created.">
 		</cfif>
 		
 		<cfreturn loc.message>
@@ -411,18 +463,18 @@
 		<cfreturn loc.message>
 	</cffunction>
 	
-	<cffunction name="$generateController" access="public" returnType="string" hint="Creates a Controller for the name of the argument passed" output="false">
+	<cffunction name="generateController" access="public" returnType="string" hint="Creates a Controller for the name of the argument passed" output="false">
 		<cfargument name="name" type="string" required="true" hint="Name of the object">
 		<cfargument name="template" type="string" required="true" default="default">
 		    
 		<cfset var loc = {}>
 		
 		<!--- Check that the file has not been already created --->
-		<cfif $checkIfFileExists(arguments.name, "Controller")>
-		    <cfset loc.message = "File 'controllers/#capitalize(pluralize(arguments.name))#.cfc' already exists so skipped.">
+		<cfif Util.fileExists(arguments.name, "Controller", projectRoot)>
+		    <cfset loc.message = "File 'controllers/#Util.capitalize(Util.pluralize(arguments.name))#.cfc' already exists so skipped.">
 		<cfelse>
-			<cfset $moveFileToFolder(arguments.name, "Controller", arguments.template)>
-		    <cfset loc.message = "File 'controllers/#capitalize(pluralize(arguments.name))#.cfc' created.">
+			<cfset moveFileToFolder(arguments.name, "Controller", arguments.template)>
+		    <cfset loc.message = "File 'controllers/#Util.capitalize(Util.pluralize(arguments.name))#.cfc' created.">
 		</cfif>
 		
 		<cfreturn loc.message>
@@ -444,15 +496,6 @@
 		<cfreturn loc.message>
 	</cffunction>
 	
-	<cffunction name="$replaceUppercaseWithDash" access="public" returnType="string" hint="Adds a dash before every upper case letter">
-		<cfargument name="text" type="string" required="true">
-		
-		<cfset var loc = {}>
-		<cfset loc.returnValue = REReplace(arguments.text, "([[:upper:]])", "-\1", "all")>
-		
-		<cfreturn loc.returnValue>
-	</cffunction>
-	
 	<cffunction name="getTemplates" access="public" output="false" hint="Gets a list of the available templates from the template folder to make a select list.">
 	   
 	    <cfset var loc = {}>
@@ -461,4 +504,4 @@
 	    <cfdirectory action="list" directory="#loc.templateFolderPath#" name="loc.templateList">
 	            
 	    <cfreturn loc.templateList>
-	</cffunction>--->
+	</cffunction>

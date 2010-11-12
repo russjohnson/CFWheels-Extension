@@ -2,7 +2,7 @@
 
 	<name>CFWheels Builder</name>
 	<author>Russ Johnson</author>
-	<version>0.1</version>
+	<version>0.1.0</version>
 	<email>russ@angry-fly.com</email>	
 	<description>CFWheels ColdFusion Builder Extension</description>	
 	<license>Apache License, Version 2.0</license>

@@ -16,16 +16,11 @@
 		<cfparam name="ideeventinfo" default="">
 		
 		<!--- Utility Class --->
-		<cfset request.utility = createObject("component","CFWheelsExtension.handlers.util.Utility")>
+		<cfset request.utility = createObject("component","CFWheelsExtension.handlers.framework.Util")>
 		<!--- Extension Location --->
 		<!---<cfset request.extensionLocation = expandPath("../")>--->
 		<!--- Base URL --->
 		<!---<cfset request.baseURL = replacenoCase( request.utility.getURLBasePath(),"handlers","")>--->
-		
-		<!--- Log Request 
-		<cflog file="ColdBoxCFBuilder" text="Executing #cgi.script_name# #timeFormat(now())#">
-		<cflog file="ColdBoxCFBuilder" text="ideeventinfo: #ideeventinfo.toString()#">
-		--->
 		
 		<!--- Parse incoming event info if available? --->
 		<cfif isXML(ideeventinfo)>
