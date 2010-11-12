@@ -1,7 +1,12 @@
-
 <cfscript>
+	Util = request.utility;
+	table = new framework.Table();
+	
+	// lets set some data about the db and table
 	databaseName = data.event.ide.rdsview.database.xmlAttributes.name;
-	tableName = data.event.ide.rdsview.database.table.xmlAttributes.name;
+	table.setName(data.event.ide.rdsview.database.table.xmlAttributes.name);
+	table.setColumns(Util.getColumnsFromXML(data.event.ide.rdsview.database.table.fields.xmlChildren));
+	table.setPrimaryKey(Util.getPrimaryKeyFromXML(data.event.ide.rdsview.database.table.fields.xmlChildren));
 	
 	projectRoot = inputStruct.projectRoot & "/";
 	modelPath = projectRoot & "models";
@@ -19,24 +24,22 @@
 	// our return message
 	message = "";
 	
-	// get some objects
-	Util = request.utility;
 </cfscript>
 
 
 <cfif inputStruct.scaffoldType is "Controller Only">
 
-	<cfset message = message & generateController(Util.singularize(tableName), template)>
+	<cfset message = message & generateController(Util.singularize(table.getName()), template)>
 
 <cfelseif inputStruct.scaffoldType is "Model Only">
 
-	<cfset message = message & generateModel(Util.singularize(tableName), template)>
+	<cfset message = message & generateModel(Util.singularize(table.getName()), template)>
 
 <cfelse>
 
-	<cfset message = message & generateModel(Util.singularize(tableName), template) & "<br/>">
-	<cfset message = message & generateController(Util.singularize(tableName), template) & "<br/>">
-
+	<cfset message = message & generateModel(Util.singularize(table.getName()), template) & "<br/>">
+	<cfset message = message & generateController(Util.singularize(table.getName()), template) & "<br/>">
+	<cfset message = message & generateViews(Util.singularize(table.getName()), template) & "<br/>">
 </cfif>
 
 
@@ -61,67 +64,14 @@
 			<script type="text/javascript" src="includes/js/jquery.latest.min.js"></script>
 		</head>
 		<body>
-			<div class="strong">Generated scaffolding for #tableName#</div>
+			<div class="strong">Generated scaffolding for #Util.capitalize(table.getName())#</div>
 			<p>#message#</p>
 		</body>
 	</html>	
 	]]></body>
 </ide>
 </response>
-</cfoutput>
-
-<!-- currently not planning to support the cf8 script style controllers -->
-<!---<cfif inputStruct.script>
-	<cffile action="read" file="#ExpandPath('../')#/code/templates/controller_script.cfm" variable="controllerContent">
-	<cffile action="read" file="#ExpandPath('../')#/code/templates/action_script.cfm" variable="actionContent">
-<cfelse>
-	<cffile action="read" file="#ExpandPath('../')#/code/templates/controller.cfm" variable="controllerContent">
-	<cffile action="read" file="#ExpandPath('../')#/code/templates/action.cfm" variable="actionContent">
-</cfif>
-
-<cfif inputStruct.script>
-	<cffile action="read" file="#ExpandPath('../')#/code/templates/model_script.cfm" variable="modelContent">
-	<cffile action="read" file="#ExpandPath('../')#/code/templates/model_method_script.cfm" variable="methodContent">
-<cfelse>
-	<cffile action="read" file="#ExpandPath('../')#/code/templates/model.cfm" variable="modelContent">
-	<cffile action="read" file="#ExpandPath('../')#/code/templates/model_method.cfm" variable="methodContent">
-</cfif>--->
-
-
-
-
-	<cffunction name="generateScaffold" access="public" returnType="string" hint="Creates a Model a Controller and the Views for the name of the argument passed" output="false">
-		<cfargument name="name" type="string" required="true" hint="Name of the object to scaffold">
-		<cfargument name="type" type="string" required="true" default="everything" hint="Type of generation to execute, values are: everything, controller, model">
-		<cfargument name="template" type="string" required="true" default="default" hint="The template to use for generating the scaffolds.">
-		
-		<cfset var loc = {}>
-		
-		<!--- Setup the information for the user --->
-		<cfset loc.message = "">
-		
-		<!--- Check if there is a table for the object --->
-		<cfset model(arguments.name)>
-		
-		<!--- Check which type of scaffold to execute --->
-		<cfif arguments.type IS "everything">
-			<!--- Create the model --->
-		    <cfset loc.message = loc.message & $generateModel(arguments.name, arguments.template) & "<br/>">
-		    <!--- Create the views --->
-			<cfset loc.message = loc.message & $generateViews(arguments.name, arguments.template) & "<br/>">
-			<!--- Create the controller --->
-		    <cfset loc.message = loc.message & $generateController(arguments.name, arguments.template) & "<br/>">
-		<cfelseif arguments.type IS "model">
-			<!--- Create the model --->
-		    <cfset loc.message = loc.message & $generateModel(arguments.name, arguments.template) & "<br/>">
-		<cfelseif arguments.type IS "controller">
-		    <!--- Create the controller --->
-		    <cfset loc.message = loc.message & $generateController(arguments.name, arguments.template) & "<br/>">
-	    </cfif>
-	    
-		<cfreturn loc.message>	    
-	</cffunction>
-	
+</cfoutput>	
 	
 	
 	<cffunction name="moveFileToFolder" access="public" returntype="void" hint="Checks if the desired Model is already created" output="false">
@@ -149,8 +99,8 @@
 	        <cfcase value="View">
 	        	
 	            <!--- Expand the from and destination folders --->
-	    		<cfset loc.fromFolderPath = expandPath("plugins/scaffold/templates/#arguments.template#/views")>
-	            <cfset loc.destinationFolderPath = expandPath("views/" & LCase(pluralize(arguments.name)))>
+	    		<cfset loc.fromFolderPath = templatePath & arguments.template & "/views">
+	            <cfset loc.destinationFolderPath = viewPath & LCase(Util.pluralize(arguments.name))>
 	            
 	            <!--- Create the directory to store the views in --->
 	            <cfif NOT DirectoryExists(loc.destinationFolderPath)>
@@ -164,16 +114,16 @@
 	            <cffile action="read" file="#loc.fromFolderPath#/edit.cfm" variable="loc.fileEdit">
 	            
 	            <!--- Generate the forms and listing for the views --->
-	            <cfset loc.entryForm = $generateEntryFormFromModel(arguments.name)>
-	            <cfset loc.editForm = $generateEditFormFromModel(arguments.name)>
-	            <cfset loc.indexListing = $generateListingViewFromModel(arguments.name)>
+	            <cfset loc.entryForm = generateEntryFormFromModel(arguments.name)>
+	            <cfset loc.editForm = generateEditFormFromModel(arguments.name)>
+	            <cfset loc.indexListing = generateListingViewFromModel(arguments.name)>
 	            <cfset loc.showListing = $generateShowViewFromModel(arguments.name)>
 	            
 				<!--- Replace the placeholders names --->
-	    		<cfset loc.fileIndex = $replacePlaceHolders(loc.fileIndex, arguments.name)>
-	            <cfset loc.fileShow = $replacePlaceHolders(loc.fileShow, arguments.name)>
-	            <cfset loc.fileNew = $replacePlaceHolders(loc.fileNew, arguments.name)>
-	            <cfset loc.fileEdit = $replacePlaceHolders(loc.fileEdit, arguments.name)>
+	    		<cfset loc.fileIndex = replacePlaceHolders(loc.fileIndex, arguments.name)>
+	            <cfset loc.fileShow = replacePlaceHolders(loc.fileShow, arguments.name)>
+	            <cfset loc.fileNew = replacePlaceHolders(loc.fileNew, arguments.name)>
+	            <cfset loc.fileEdit = replacePlaceHolders(loc.fileEdit, arguments.name)>
 	            
 	            <!--- Replace the placeholder forms --->
 	            <cfset loc.fileNew = ReplaceNoCase(loc.fileNew, "ENTRYFORM", loc.entryForm)>
@@ -207,10 +157,7 @@
 	            <!--- Write the file in the corresponding folder --->
 	            <cffile action="write" file="#loc.destinationFolderPath#/#Util.capitalize(Util.pluralize(arguments.name))#.cfc" output="#loc.file#" mode="777"> 
 	        </cfcase>
-	        
-	        <cfdefaultcase>
-	        	<!--- Display a nice Wheels error? --->
-	        </cfdefaultcase>
+	      
 	    </cfswitch>
 	    
 	</cffunction>
@@ -231,25 +178,24 @@
 	    <cfset loc.replacedContent = ReplaceNoCase(loc.replacedContent, "[NameSingularLowercase]", LCase(arguments.value), "All")>
 	    
 		<!--- Find all occurences of [PrimaryKey] and replace it with the actual primary key(s) --->
-	    <cfset loc.replacedContent = ReplaceNoCase(loc.replacedContent, "[PrimaryKey]", model(LCase(arguments.value)).primaryKey(), "All")>
+	    <cfset loc.replacedContent = ReplaceNoCase(loc.replacedContent, "[PrimaryKey]", lCase(table.getPrimaryKey()), "All")>
 	    
 	    <cfreturn loc.replacedContent>
 	    
 	</cffunction>
 	
-	<cffunction name="$generateEntryFormFromModel" access="public" returnType="string" hint="Generates an entry form from a Model by reading the table schema" output="false">
+	<cffunction name="generateEntryFormFromModel" access="public" returnType="string" hint="Generates an entry form from a Model by reading the table schema" output="false">
 		<cfargument name="name" type="string" required="true" hint="Name of the model to generator the form for">
 		
 		<cfset var loc = {}>
 		
 		<!--- Define the name of the object returned from the controller --->
 		<cfset loc.nameInSingularLowercase = LCase(arguments.name)>
-		<cfset loc.nameInPluralLowercase = LCase(pluralize(arguments.name))>
-		<cfset loc.nameInPluralUppercase = capitalize(pluralize(arguments.name))>
+		<cfset loc.nameInPluralLowercase = LCase(Util.pluralize(arguments.name))>
+		<cfset loc.nameInPluralUppercase = Util.capitalize(Util.pluralize(arguments.name))>
 		
 		<!--- Introspect the table to find the column names and types --->		
-		<cfset loc.columns = model(loc.nameInSingularLowercase).$classData()>
-		<cfset loc.columnsInOrder = loc.columns.columnList>
+		<cfset loc.columns = table.getColumns()>
 
 		<cfprocessingdirective suppressWhiteSpace="true">
 		<cfsavecontent variable="loc.form">
@@ -258,11 +204,11 @@
 			[errorMessagesFor("<cfoutput>#loc.nameInSingularLowercase#</cfoutput>")]
 	
 			[startFormTag(action="create")]
-		
-				<cfloop list="#loc.columnsInOrder#" index="loc.property">
-					<cfif ListFindNoCase(model(loc.nameInSingularLowercase).primaryKey(), loc.columns.properties[loc.property].COLUMN) IS 0 AND loc.columns.properties[loc.property].COLUMN IS NOT "createdAt" AND loc.columns.properties[loc.property].COLUMN IS NOT "updatedAt" AND loc.columns.properties[loc.property].COLUMN IS NOT "deletedAt">
-						[#$generateFormField(loc.nameInSingularLowercase, loc.columns.properties[loc.property])#]
-					</cfif>											
+			
+				<cfloop from="1" to="#arrayLen(loc.columns)#" index="i">
+					<cfif !loc.columns[i].primaryKey AND !loc.columns[i].name is "createdAt" AND !loc.columns[i].name is "updatedAt" AND !loc.columns[i].name is "deletedAt">
+						[#generateFormField(loc.nameInSingularLowercase, loc.columns[i])#]
+					</cfif>
 				</cfloop>
 
 				[submitTag()]
@@ -283,19 +229,18 @@
 		<cfreturn loc.form>
 	</cffunction>
 	
-	<cffunction name="$generateEditFormFromModel" access="public" returnType="string" hint="Generates an edit form from a Model by reading the table schema" output="false">
+	<cffunction name="generateEditFormFromModel" access="public" returnType="string" hint="Generates an edit form from a Model by reading the table schema" output="false">
 		<cfargument name="name" type="string" required="true" hint="Name of the model to generator the form for">
 		
 		<cfset var loc = {}>
 		
 		<!--- Define the name of the object returned from the controller --->
 		<cfset loc.nameInSingularLowercase = LCase(arguments.name)>
-		<cfset loc.nameInPluralLowercase = LCase(pluralize(arguments.name))>
-		<cfset loc.nameInPluralUppercase = capitalize(pluralize(arguments.name))>
+		<cfset loc.nameInPluralLowercase = LCase(Util.pluralize(arguments.name))>
+		<cfset loc.nameInPluralUppercase = Util.capitalize(Util.pluralize(arguments.name))>
 		
 		<!--- Introspect the table to find the column names and types --->		
-		<cfset loc.columns = model(loc.nameInSingularLowercase).$classData()>
-		<cfset loc.columnsInOrder = loc.columns.columnList>
+		<cfset loc.columns = table.getColumns()>
 		
 		<cfprocessingdirective suppressWhiteSpace="true">
 		<cfsavecontent variable="loc.form">
@@ -304,9 +249,9 @@
 	
 			[startFormTag(action="update", key=params.key)]
 		
-				<cfloop list="#loc.columnsInOrder#" index="loc.property">
-					<cfif ListFindNoCase(model(loc.nameInSingularLowercase).primaryKey(), loc.columns.properties[loc.property].COLUMN) IS 0 AND loc.columns.properties[loc.property].COLUMN IS NOT "createdAt" AND loc.columns.properties[loc.property].COLUMN IS NOT "updatedAt" AND loc.columns.properties[loc.property].COLUMN IS NOT "deletedAt">
-						[#$generateFormField(loc.nameInSingularLowercase, loc.columns.properties[loc.property])#]
+				<cfloop from="1" to="#arrayLen(loc.columns)#" index="i">
+					<cfif !loc.columns[i].primaryKey AND !loc.columns[i].name is "createdAt" AND !loc.columns[i].name is "updatedAt" AND !loc.columns[i].name is "deletedAt">
+						[#generateFormField(loc.nameInSingularLowercase, loc.columns[i])#]
 					</cfif>										
 				</cfloop>
 				
@@ -328,65 +273,65 @@
 		<cfreturn loc.form>
 	</cffunction>
 	
-	<cffunction name="$generateFormField" access="public" returnType="string" hint="Generates a form field using Wheel's view helpers" output="false">
+	<cffunction name="generateFormField" access="public" returnType="string" hint="Generates a form field using Wheel's view helpers" output="false">
 		<cfargument name="objectName" type="string" required="true" hint="Name of the object which holds the property">
 		<cfargument name="columnObject" type="struct" required="true" hint="Struct of the database column">
 		
 		<cfset var loc = {}>
 
-		<cfswitch expression="#arguments.columnObject.TYPE#">
+		<cfswitch expression="#arguments.columnObject.cfsqltype#">
 			<cfcase value="cf_sql_bit,cf_sql_tinyint" delimiters=",">
 				<!--- Return a checkbox --->
-				<cfset loc.fieldTag = "checkBox(objectName='#arguments.objectName#', property='#arguments.columnObject.COLUMN#', label='#humanize(arguments.columnObject.COLUMN)#')">
+				<cfset loc.fieldTag = "checkBox(objectName='#arguments.objectName#', property='#arguments.columnObject.name#', label='#humanize(arguments.columnObject.name)#')">
 			</cfcase>
 
 			<cfcase value="cf_sql_longvarchar">
 				<!--- Return a textarea --->
-				<cfset loc.fieldTag = "textArea(objectName='#arguments.objectName#', property='#arguments.columnObject.COLUMN#', label='#humanize(arguments.columnObject.COLUMN)#')">
+				<cfset loc.fieldTag = "textArea(objectName='#arguments.objectName#', property='#arguments.columnObject.name#', label='#humanize(arguments.columnObject.name)#')">
 			</cfcase>
 
 			<cfcase value="cf_sql_date">
 				<!--- Return a calendar --->
-				<cfset loc.fieldTag = "dateSelect(objectName='#arguments.objectName#', property='#arguments.columnObject.COLUMN#', label='#humanize(arguments.columnObject.COLUMN)#')">
+				<cfset loc.fieldTag = "dateSelect(objectName='#arguments.objectName#', property='#arguments.columnObject.name#', label='#humanize(arguments.columnObject.name)#')">
 			</cfcase>
 
 			<cfcase value="cf_sql_time">
 				<!--- Return a time picker --->
-				<cfset loc.fieldTag = "timeSelect(objectName='#arguments.objectName#', property='#arguments.columnObject.COLUMN#', label='#humanize(arguments.columnObject.COLUMN)#')">
+				<cfset loc.fieldTag = "timeSelect(objectName='#arguments.objectName#', property='#arguments.columnObject.name#', label='#humanize(arguments.columnObject.name)#')">
 			</cfcase>
 
 			<cfcase value="cf_sql_timestamp">
 				<!--- Return a calendar and time picker --->
-				<cfset loc.fieldTag = "dateTimeSelect(objectName='#arguments.objectName#', property='#arguments.columnObject.COLUMN#', dateOrder='year,month,day', monthDisplay='abbreviations', label='#humanize(arguments.columnObject.COLUMN)#')">
+				<cfset loc.fieldTag = "dateTimeSelect(objectName='#arguments.objectName#', property='#arguments.columnObject.name#', dateOrder='year,month,day', monthDisplay='abbreviations', label='#humanize(arguments.columnObject.name)#')">
 			</cfcase>
 
 			<cfdefaultcase>
 				<!--- Return a text if everything fails --->
-				<cfset loc.fieldTag = "textField(objectName='#arguments.objectName#', property='#arguments.columnObject.COLUMN#', label='#humanize(arguments.columnObject.COLUMN)#')">
+				<cfset loc.fieldTag = "textField(objectName='#arguments.objectName#', property='#arguments.columnObject.name#', label='#humanize(arguments.columnObject.name)#')">
 			</cfdefaultcase>
 		</cfswitch>
 		
 		<cfreturn loc.fieldTag>
 	</cffunction>
 	
-	<cffunction name="$generateListingViewFromModel" access="public" returnType="string" hint="Generates a listing View from a Model by reading the table schema" output="false">
+	<cffunction name="generateListingViewFromModel" access="public" returnType="string" hint="Generates a listing View from a Model by reading the table schema" output="false">
 		<cfargument name="name" type="string" required="true" hint="Name of the model to generator the listing for">
 		
 		<cfset var loc = {}>
 		
 		<!--- Define the name of the object returned from the controller --->
 		<cfset loc.nameInSingularLowercase = LCase(arguments.name)>
-		<cfset loc.nameInPluralLowercase = LCase(pluralize(arguments.name))>
-		<cfset loc.nameInPluralUppercase = capitalize(pluralize(arguments.name))>
+		<cfset loc.nameInPluralLowercase = LCase(Util.pluralize(arguments.name))>
+		<cfset loc.nameInPluralUppercase = Util.capitalize(Util.pluralize(arguments.name))>
 		
 		<!--- Introspect the table to find the column names --->
-		<cfset loc.columns = model(loc.nameInSingularLowercase).$classData().columnList>
+		<cfset loc.columns = table.getColumns()>
 		
 		<cfprocessingdirective suppressWhiteSpace="true">
 		<cfsavecontent variable="loc.form">
 			<cfoutput>
-				<cfloop list="#loc.columns#" index="loc.column">
-					[cfcol header="#humanize(loc.column)#" text="###loc.column###" /]
+				<cfloop from="1" to="#arrayLen(loc.columns)#" index="i">
+					[cfcol header="#Util.humanize(loc.column[i].name)#" text="###loc.column[i].name###" /]
 				</cfloop>
 			</cfoutput>
 		</cfsavecontent>
@@ -399,25 +344,25 @@
 		<cfreturn loc.form>
 	</cffunction>
 	
-	<cffunction name="$generateShowViewFromModel" access="public" returnType="string" hint="Generates a show View from a Model by reading the table schema" output="false">
+	<cffunction name="generateShowViewFromModel" access="public" returnType="string" hint="Generates a show View from a Model by reading the table schema" output="false">
 		<cfargument name="name" type="string" required="true" hint="Name of the model to generator the show for">
 		
 		<cfset var loc = {}>
 		
 		<!--- Define the name of the object returned from the controller --->
 		<cfset loc.nameInSingularLowercase = LCase(arguments.name)>
-		<cfset loc.nameInPluralLowercase = LCase(pluralize(arguments.name))>
-		<cfset loc.nameInPluralUppercase = capitalize(pluralize(arguments.name))>
+		<cfset loc.nameInPluralLowercase = LCase(Util.pluralize(arguments.name))>
+		<cfset loc.nameInPluralUppercase = Util.capitalize(Util.pluralize(arguments.name))>
 		
 		<!--- Introspect the table to find the column names --->
-		<cfset loc.columns = model(loc.nameInSingularLowercase).$classData().columnList>
+		<cfset loc.columns = table.getColumns()>
 		
 		<cfprocessingdirective suppressWhiteSpace="true">
 		<cfsavecontent variable="loc.form">
 			<cfoutput>
-				<cfloop list="#loc.columns#" index="loc.column">
-					<p><label>#humanize(loc.column)#</label> <br />
-						###loc.nameInSingularLowercase & "." & loc.column###</p>
+				<cfloop from="1" to="#arrayLen(loc.columns)#" index="i">
+					<p><label>#Util.humanize(loc.column[i].name)#</label> <br />
+						###loc.nameInSingularLowercase & "." & loc.column[i].name###</p>
 				</cfloop>
 			</cfoutput>
 		</cfsavecontent>
@@ -446,18 +391,18 @@
 		<cfreturn loc.message>
 	</cffunction>
 	
-	<cffunction name="$generateViews" access="public" returnType="string" hint="Creates the 'index,show,new and edit' Views for the name of the argument passed" output="false">
+	<cffunction name="generateViews" access="public" returnType="string" hint="Creates the 'index,show,new and edit' Views for the name of the argument passed" output="false">
 		<cfargument name="name" type="string" required="true" hint="Name of the object">
 		<cfargument name="template" type="string" required="true" default="default">
 		    
 		<cfset var loc = {}>
 		
 		<!--- Check that the folder to store the views has not been already created --->
-		<cfif $checkIfFileExists(arguments.name, "View")>
-		    <cfset loc.message = "Folder 'views/#LCase(pluralize(arguments.name))#/' already exists so skipped.">  
+		<cfif Util.fileExists(arguments.name, "View", projectRoot)>
+		    <cfset loc.message = "Folder 'views/#LCase(Util.pluralize(arguments.name))#/' already exists so skipped.">  
 		<cfelse>
-			<cfset $moveFileToFolder(arguments.name, "View", arguments.template)>
-			<cfset loc.message = "Folder 'views/#LCase(pluralize(arguments.name))#/' created.">		
+			<cfset moveFileToFolder(arguments.name, "View", template)>
+			<cfset loc.message = "Folder 'views/#LCase(Util.pluralize(arguments.name))#/' created.">		
 		</cfif>
 		
 		<cfreturn loc.message>
@@ -480,21 +425,6 @@
 		<cfreturn loc.message>
 	</cffunction>
 	
-	<cffunction name="$generateRoutes" access="public" returnType="string" hint="Creates all the routes for the name of the argument passed" output="false">
-		<cfargument name="name" type="string" required="true" hint="Name of the object">
-		
-		<cfset var loc = {}>
-		
-		<!--- Check that the file has not been already created 
-		<cfif $checkIfFileExists(arguments.name, "Controller")>
-		    <cfset loc.message = "File 'controllers/#capitalize(pluralize(arguments.name))#.cfc' already exists so skipped.">
-		<cfelse>
-			<cfset $moveFileToFolder(arguments.name, "Controller")>
-		    <cfset loc.message = "File 'controllers/#capitalize(arguments.name)#.cfc' created.">
-		</cfif>--->
-		
-		<cfreturn loc.message>
-	</cffunction>
 	
 	<cffunction name="getTemplates" access="public" output="false" hint="Gets a list of the available templates from the template folder to make a select list.">
 	   

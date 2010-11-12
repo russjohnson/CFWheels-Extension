@@ -4,9 +4,13 @@
 <cfscript>
 	controllerLocation = data.event.ide.projectview.resource.xmlAttributes.path;
 	controllerName = inputStruct.name;
+	controllerFile = controllerName & ".cfc";
 	controllerMethods = inputStruct.methods;
 	
 	viewsLocation = data.event.ide.projectview.xmlattributes.projectlocation & "/views/" & lCase(controllerName);
+	
+	controllerMessage = "";
+	fileMessage = "";
 </cfscript>
 
 <!-- currently not planning to support the cf8 script style controllers -->
@@ -24,7 +28,7 @@
 	
 	<cfloop list="#controllerMethods#" index="method">
 		
-		<cfset methods = methods & replaceNoCase(eventMethodContent,"[method]",method,"all") & chr(13) & chr(13)/>
+		<cfset methods = methods & replaceNoCase(eventMethodContent,"[method]",ltrim(method),"all") & chr(13) & chr(13)/>
 		
 		<!--- check to see if we are generating views --->
 		<cfif inputStruct.GenerateViews>
@@ -32,7 +36,12 @@
 				<cfdirectory action="create" directory="#viewsLocation#" mode="777">
 			</cfif>
 			<cfif !method is 'init'>
-				<cfset fileWrite(viewsLocation & "/" & method & ".cfm","<h1>#controllerName# #method#</h1>")>
+				<cfif !request.utility.fileExists(controllerName, "view", data.event.ide.projectview.xmlattributes.projectlocation)>
+					<cfset fileWrite(viewsLocation & "/" & ltrim(method) & ".cfm","<h1>#controllerName# #method#</h1>")>
+					<cfset fileMessage = fileMessage & "Created view file #viewsLocation#/#ltrim(method)#.cfm<br/>">
+				<cfelse>
+					<cfset fileMessage = fileMessage & "View file #viewsLocation#/#ltrim(method)#.cfm exists so skipped<br/>">
+				</cfif>
 			</cfif>
 		</cfif>
 		
@@ -43,7 +52,13 @@
 	<cfset controllerContent = replaceNoCase(controllerContent,"[eventMethods]",'',"all") />
 </cfif>
 
-<cffile action="write" file="#controllerLocation#/#controllerName#.cfc" mode ="777" output="#controllerContent#">
+<cfif !request.utility.fileExists(controllerName, "controller", data.event.ide.projectview.xmlattributes.projectlocation)>
+	<cffile action="write" file="#controllerLocation#/#controllerFile#" mode ="777" output="#controllerContent#">
+	<cfset controllerMessage = "Generated controller named #controllerName#.cfc">
+<cfelse>
+	<cfset controllerMessage = "The controller file already exists so it was not overwritten">
+</cfif>
+
 
 <cfheader name="Content-Type" value="text/xml">  
 <cfoutput>
@@ -61,20 +76,22 @@
 			</params>
 		</command>
 	</commands>
-	<dialog width="550" height="350" title="CFWheels Controller Scaffold" image="includes/images/cfwheels-logo.png"/>  
+	<dialog width="550" height="400" title="CFWheels Controller Scaffold" image="includes/images/cfwheels-logo.png"/>  
 	<body><![CDATA[
 	<html>
 		<head>
 			<base href="" />
-			<link href="includes/css/styles.css" type="text/css" rel="stylesheet">
+			<link href="<cfoutput>#request.extensionLocation#</cfoutput>/includes/css/styles.css" type="text/css" rel="stylesheet">
 			<script type="text/javascript" src="includes/js/jquery.latest.min.js"></script>
 		</head>
 		<body>
-			<div class="strong">Generated controller #controllerName#.cfc</div>
+			<p><strong><cfoutput>#controllerMessage#</cfoutput></strong></p>
 			<cfif inputStruct.generateViews>
 				<!-- need to loop throught he methods and output the view file names here -->
-				<p>
-					Also built some views
+				<p>Generated the following view files:<br>
+					<cfoutput>
+						#fileMessage#
+					</cfoutput>
 				</p>
 			</cfif>
 		</body>

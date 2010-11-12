@@ -1,10 +1,14 @@
 ﻿<cfcomponent displayname="Util" hint="Handles utility methods for the Extension" output="false">
 
 
-	<cffunction name="fileExists" access="public" returntype="boolean" hint="Checks if the desired object is already created" output="false">
+	<cffunction name="fileExists" access="public" returntype="boolean" hint="Checks if the desired object is already created" output="true">
 		<cfargument name="name" type="string" required="true" hint="Name of the file to search for">
 	    <cfargument name="type" type="string" required="true" hint="Type of file to look for (Model, View, Controller)">
 	    <cfargument name="projectRoot" type="string" required="true">
+	    
+	    <cfif !right(arguments.projectRoot,1) is "/">
+	    	<cfset arguments.projectRoot = arguments.projectRoot & "/">
+	    </cfif>
 	    
 	    <cfset var loc = {}>
 	 	
@@ -41,17 +45,28 @@
 	
 	<cffunction name="singularize" returntype="string" access="public" output="false">
 		<cfargument name="word" type="string" required="true" hint="String to singularize">
-		<cfreturn $singularizeOrPluralize(text=arguments.word, which="singularize")>
+		<cfreturn singularizeOrPluralize(text=arguments.word, which="singularize")>
 	</cffunction>
 
 	<cffunction name="pluralize" returntype="string" access="public" output="false">
 		<cfargument name="word" type="string" required="true" hint="The word to pluralize">
 		<cfargument name="count" type="numeric" required="false" default="-1" hint="Pluralization will occur when this value is not 1">
 		<cfargument name="returnCount" type="boolean" required="false" default="true" hint="Will return the count prepended to the pluralization when true and count is not -1">
-		<cfreturn $singularizeOrPluralize(text=arguments.word, which="pluralize", count=arguments.count, returnCount=arguments.returnCount)>
+		<cfreturn singularizeOrPluralize(text=arguments.word, which="pluralize", count=arguments.count, returnCount=arguments.returnCount)>
 	</cffunction>
+	
+	<cffunction name="humanize" returntype="string" access="public" output="false">
+		<cfargument name="text" type="string" required="true" hint="Text to humanize">
+		<cfscript>
+			var loc = {};
+			loc.returnValue = REReplace(arguments.text, "([[:upper:]])", " \1", "all"); // adds a space before every capitalized word
+			loc.returnValue = REReplace(loc.returnValue, "([[:upper:]]) ([[:upper:]]) ", "\1\2", "all"); // fixes abbreviations so they form a word again (example: aURLVariable)
+			loc.returnValue = capitalize(loc.returnValue); // capitalize the first letter
+		</cfscript>
+		<cfreturn loc.returnValue>
+</cffunction>
 
-	<cffunction name="$singularizeOrPluralize" returntype="string" access="public" output="false">
+	<cffunction name="singularizeOrPluralize" returntype="string" access="public" output="false">
 		<cfargument name="text" type="string" required="true">
 		<cfargument name="which" type="string" required="true">
 		<cfargument name="count" type="numeric" required="false" default="-1">
@@ -134,5 +149,122 @@
 			return inputStruct;
 		</cfscript>
 	</cffunction>
+	
+	
+	<cffunction name="getColumnsFromXML" access="public" output="false">
+		<cfargument name="xmlNode" type="any" required="true">
+		<cfset var loc = {}>
+		<cfset loc.columns = []>
+		<cfscript>
+		
+			for (i=1;i LTE ArrayLen(arguments.xmlNode);i=i+1) {
+    	    	column = arguments.xmlNode[i].xmlAttributes;
+				
+    	        arrayAppend(loc.columns,column);
+            }
+		</cfscript>
+		<cfreturn loc.columns>
+	</cffunction>
+	
+	<cffunction name="getPrimaryKeyFromXML" access="public" output="false">
+		<cfargument name="xmlNode" type="any" required="true">
+		<cfset var loc = {}>
+
+		<cfscript>
+		
+			for (i=1;i LTE ArrayLen(arguments.xmlNode);i=i+1) {
+    	    	loc.column = arguments.xmlNode[i].xmlAttributes;
+				
+				// not sure if we need to support multiple keys here or not
+				// first build will handle single key
+    	        if(loc.column.primaryKey){
+					return loc.column.name;
+				}
+            }
+		</cfscript>
+	</cffunction>
+	
+	<!--- 
+	This function converts XML variables into Coldfusion Structures. It also
+	returns the attributes for each XML node.
+	--->
+	
+	<cffunction name="xmlToStruct" access="public" returntype="struct" output="false" hint="Parse raw XML response body into ColdFusion structs and arrays and return it.">
+		<cfargument name="xmlNode" type="string" required="true" />
+		<cfargument name="str" type="struct" required="true" />
+		<!---Setup local variables for recurse: --->
+		<cfset var i = 0 />
+		<cfset var axml = arguments.xmlNode />
+		<cfset var astr = arguments.str />
+		<cfset var n = "" />
+		<cfset var tmpContainer = "" />
+		
+		<cfset axml = XmlSearch(XmlParse(arguments.xmlNode),"/node()")>
+		<cfset axml = axml[1] />
+		<!--- For each children of context node: --->
+		<cfloop from="1" to="#arrayLen(axml.XmlChildren)#" index="i">
+			<!--- Read XML node name without namespace: --->
+			<cfset n = replace(axml.XmlChildren[i].XmlName, axml.XmlChildren[i].XmlNsPrefix&":", "") />
+			<!--- If key with that name exists within output struct ... --->
+			<cfif structKeyExists(astr, n)>
+				<!--- ... and is not an array... --->
+				<cfif not isArray(astr[n])>
+					<!--- ... get this item into temp variable, ... --->
+					<cfset tmpContainer = astr[n] />
+					<!--- ... setup array for this item beacuse we have multiple items with same name, ... --->
+					<cfset astr[n] = arrayNew(1) />
+					<!--- ... and reassing temp item as a first element of new array: --->
+					<cfset astr[n][1] = tmpContainer />
+				<cfelse>
+					<!--- Item is already an array: --->
+					
+				</cfif>
+				<cfif arrayLen(axml.XmlChildren[i].XmlChildren) gt 0>
+						<!--- recurse call: get complex item: --->
+						<cfset astr[n][arrayLen(astr[n])+1] = xmlToStruct(axml.XmlChildren[i], structNew()) />
+					<cfelse>
+						<!--- else: assign node value as last element of array: --->
+						<cfset astr[n][arrayLen(astr[n])+1] = axml.XmlChildren[i].XmlText />
+				</cfif>
+			<cfelse>
+				<!---
+					This is not a struct. This may be first tag with some name.
+					This may also be one and only tag with this name.
+				--->
+				<!---
+						If context child node has child nodes (which means it will be complex type): --->
+				<cfif arrayLen(axml.XmlChildren[i].XmlChildren) gt 0>
+					<!--- recurse call: get complex item: --->
+					<cfset astr[n] = xmlToStruct(axml.XmlChildren[i], structNew()) />
+				<cfelse>
+					<!--- else: assign node value as last element of array: --->
+					<!--- if there are any attributes on this element--->
+					<cfif IsStruct(aXml.XmlChildren[i].XmlAttributes) AND StructCount(aXml.XmlChildren[i].XmlAttributes) GT 0>
+						<!--- assign the text --->
+						<cfset astr[n] = axml.XmlChildren[i].XmlText />
+							<!--- check if there are no attributes with xmlns: , we dont want namespaces to be in the response--->
+						 <cfset attrib_list = StructKeylist(axml.XmlChildren[i].XmlAttributes) />
+						 <cfloop from="1" to="#listLen(attrib_list)#" index="attrib">
+							 <cfif ListgetAt(attrib_list,attrib) CONTAINS "xmlns:">
+								 <!--- remove any namespace attributes--->
+								<cfset Structdelete(axml.XmlChildren[i].XmlAttributes, listgetAt(attrib_list,attrib))>
+							 </cfif>
+						 </cfloop>
+						 <!--- if there are any atributes left, append them to the response--->
+						 <cfif StructCount(axml.XmlChildren[i].XmlAttributes) GT 0>
+							 <cfset astr[n&'_attributes'] = axml.XmlChildren[i].XmlAttributes />
+						</cfif>
+					<cfelse>
+						 <cfset astr[n] = axml.XmlChildren[i].XmlText />
+					</cfif>
+				</cfif>
+			</cfif>
+		</cfloop>
+		<!--- return struct: --->
+		<cfreturn astr />
+	</cffunction>
+	
+	
+	
 
 </cfcomponent>

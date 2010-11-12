@@ -1,8 +1,8 @@
 <cfcomponent output="false">
 	
 	<cfscript>
-		this.name				= "CFWheelsCFBuilderExtension_#hash(getCurrentTemplatePath())#";
-		this.sessionManagement	= true;
+		this.name = "CFWheelsCFBuilderExtension_#hash(getCurrentTemplatePath())#";
+		this.sessionManagement = true;
 		
 		this.mappings["/CFWheelsExtension"] = getDirectoryFromPath(getCurrentTemplatePath()) ;
 	</cfscript>
@@ -18,9 +18,7 @@
 		<!--- Utility Class --->
 		<cfset request.utility = createObject("component","CFWheelsExtension.handlers.framework.Util")>
 		<!--- Extension Location --->
-		<!---<cfset request.extensionLocation = expandPath("../")>--->
-		<!--- Base URL --->
-		<!---<cfset request.baseURL = replacenoCase( request.utility.getURLBasePath(),"handlers","")>--->
+		<cfset request.extensionLocation = expandPath("../")>
 		
 		<!--- Parse incoming event info if available? --->
 		<cfif isXML(ideeventinfo)>

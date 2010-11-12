@@ -12,7 +12,7 @@
 <!--- Unzip it --->
 <cfif appSkeletonZip.recordCount>
 	<cfzip action="unzip" destination="#expandLocation#" file="#appSkeletonZip.directory#/#appSkeletonZip.name#" storePath="true" recurse="yes" />
-	<cfset message = listFirst(appSkeletonsZip.name,".") & " application skeleton succesfully generated!" />
+	<cfset message = left(appSkeletonZip.name, len(appSkeletonZip.name)-4) & " application skeleton succesfully generated!" />
 <cfelse>
 	<cfset message = "No zip file was found in that directory." />
 </cfif>
@@ -38,11 +38,10 @@
 			</params>
 		</command>-->
 	</commands>
-	<dialog width="600" height="250" title="CFWheels Application Scaffold" image="includes/images/coldbox-logo.png"/>  
+	<dialog width="600" height="250" title="CFWheels Application Scaffold" image="includes/images/cfwheels-logo.png"/>  
 	<body><![CDATA[
 	<html>
 		<head>
-			<base href="#request.baseURL#" />
 			<link href="includes/css/styles.css" type="text/css" rel="stylesheet">
 			<script type="text/javascript" src="includes/js/jquery.latest.min.js"></script>
 		</head>

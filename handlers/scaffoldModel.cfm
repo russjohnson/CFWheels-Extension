@@ -21,7 +21,7 @@
 	
 	<cfloop list="#modelMethods#" index="method">
 		
-		<cfset methods = methods & replaceNoCase(methodContent,"[method]",method,"all") & chr(13) & chr(13)/>
+		<cfset methods = methods & replaceNoCase(methodContent,"[method]",ltrim(method),"all") & chr(13) & chr(13)/>
 		
 	</cfloop>
 	
@@ -30,7 +30,13 @@
 	<cfset modelContent = replaceNoCase(modelContent,"[eventMethods]",'',"all") />
 </cfif>
 
-<cffile action="write" file="#modelLocation#/#modelName#.cfc" mode ="777" output="#modelContent#">
+<cfif !request.utility.fileExists(modelName, "model", data.event.ide.projectview.xmlattributes.projectlocation)>
+	<cffile action="write" file="#modelLocation#/#modelName#.cfc" mode ="777" output="#modelContent#">
+	<cfset modelMessage = "Generated model named #modelName#.cfc">
+<cfelse>
+	<cfset modelMessage = "The model file already exists so it was not overwritten">
+</cfif>
+
 
 <cfheader name="Content-Type" value="text/xml">  
 <cfoutput>
@@ -52,12 +58,11 @@
 	<body><![CDATA[
 	<html>
 		<head>
-			<base href="" />
-			<link href="includes/css/styles.css" type="text/css" rel="stylesheet">
+			<link href="<cfoutput>#request.extensionLocation#</cfoutput>/includes/css/styles.css" type="text/css" rel="stylesheet">
 			<script type="text/javascript" src="includes/js/jquery.latest.min.js"></script>
 		</head>
 		<body>
-			<div class="strong">Generated the model named #modelName#.cfc</div>
+			<p><cfoutput>#modelMessage#</cfoutput></p>
 		</body>
 	</html>	
 	]]></body>

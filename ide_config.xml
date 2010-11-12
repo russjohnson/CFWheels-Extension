@@ -31,10 +31,9 @@
 					<filters><filter type="folder" pattern="models"/></filters>
 				</action>
 				
-				<action name="New View" handlerid="newView" showResponse="true">
+				<!--<action name="New View" handlerid="newView" showResponse="true">
 					<filters><filter type="folder" pattern="views"/></filters>
-					<!-- these should be controller specific based on the controller folder you click on -->
-				</action>
+				</action>-->
 				
 			</menu>
 		</contribution>
@@ -46,7 +45,6 @@
 					
 				</action>
 				<action name="Generate Alter Table Migration" handlerid="generateAlterTable" showResponse="true">
-					
 				</action>
 			</menu>
 			
