@@ -11,7 +11,7 @@
 	<menucontributions>
 		
 		<contribution target="projectview">
-			<!-- PROJECT MENU ITEMS -->
+		
 			<menu name="CFWheels Framework">
 								
 				<action name="New Wheels Application" handlerid="newApplication" showResponse="true">
@@ -20,9 +20,6 @@
 					</filters>
 				</action>
 				
-				<!-- These menu items for code generation are context specific -->
-				<!-- Based on the folder you click on, you get the correct options -->
-					
 				<action name="New Controller" handlerid="newController" showresponse="true">
 					<filters><filter type="folder" pattern="controllers"/></filters>			
 				</action>
@@ -49,6 +46,15 @@
 			</menu>
 			
 		</contribution>
+		
+		<contribution target="editor">
+			<menu name="CFWheels Editor Functions">
+				
+				<action name="Create partial from selection" handlerid="createPartial" showResponse="true">
+	  			</action>
+				
+			</menu>
+		</contribution>
 				
 	</menucontributions>
 	
@@ -62,16 +68,17 @@
 		
 		<!-- PROJECT HANDLERS -->
 		<handler id="newApplication" type="cfm" filename="scaffoldApplication.cfm" />
-		
-		
-		<!-- SCAFFOLD HANDLERS -->
-		<handler id="scaffoldTable" type="cfm" filename="scaffoldTableSetup.cfm" />
 		<handler id="newController" type="cfm" filename="controllerSetup.cfm" />
 		<handler id="newModel" type="cfm" filename="modelSetup.cfm" />
 		
 		
 		<!-- RDS VIEW HANDLERS -->
+		<handler id="scaffoldTable" type="cfm" filename="scaffoldTableSetup.cfm" />
 		<handler id="generateAlterTable" type="cfm" filename="" />
+		
+		
+		<!-- EDITOR HANDLERS -->
+		<handler id="createPartial" type="cfm" filename="partialSetup.cfm" />
 	</handlers>
 
 </application>
