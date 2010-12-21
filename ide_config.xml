@@ -2,7 +2,7 @@
 
 	<name>CFWheels Builder</name>
 	<author>Russ Johnson</author>
-	<version>0.1.0</version>
+	<version>0.2</version>
 	<email>russ@angry-fly.com</email>	
 	<description>CFWheels ColdFusion Builder Extension</description>	
 	<license>Apache License, Version 2.0</license>
@@ -53,6 +53,9 @@
 				<action name="Create partial from selection" handlerid="createPartial" showResponse="true">
 	  			</action>
 				
+				<action name="Open selected partial" handlerid="openPartial" showResponse="true">
+	  			</action>
+				
 			</menu>
 		</contribution>
 				
@@ -79,6 +82,7 @@
 		
 		<!-- EDITOR HANDLERS -->
 		<handler id="createPartial" type="cfm" filename="partialSetup.cfm" />
+		<handler id="openPartial" type="cfm" filename="openPartial.cfm" />
 	</handlers>
 
 </application>

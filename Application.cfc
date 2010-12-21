@@ -1,4 +1,4 @@
-<cfcomponent output="false">
+<cfcomponent output="false" extends="handlers.BaseApplication">
 	
 	<cfscript>
 		this.name = "CFWheelsCFBuilderExtension_#hash(getCurrentTemplatePath())#";
@@ -6,11 +6,21 @@
 		
 		this.mappings["/CFWheelsExtension"] = getDirectoryFromPath(getCurrentTemplatePath()) ;
 	</cfscript>
+	
+	<cffunction name="onApplicationStart">
+    	<cfset super.onApplicationStart() />
+ 
+    	<cfreturn true />
+	</cffunction>
+	
+	<cffunction name="onRequestStart">
+    	<cfsetting showdebugoutput="false">
+	</cffunction>
 
 	<cffunction name="onRequest">
-		<cfargument name="targetPage">
+		<cfargument name="targetPage" type="string" required="true">
 		
-   		<cfsetting showdebugoutput="false">
+		<cfset super.onRequest(arguments.targetPage) />
 		
 		<!--- Param the incoming ide event info --->
 		<cfparam name="ideeventinfo" default="">
