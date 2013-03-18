@@ -2,7 +2,7 @@
 <cfoutput>  
 <response status="success" type="default">  
 	<ide handlerfile="scaffoldTable.cfm"> 
-		<dialog width="500" height="450" title="Scaffold Table" image="includes/images/cfwheels-logo.png">
+		<dialog width="550" height="450" title="Scaffold Table" image="includes/images/cfwheels-logo.png">
 		
 			<input name="projectRoot" 
 				   label="Project Root" 
@@ -22,7 +22,8 @@
 				   		<option value="Model Only"/>
 				   		<option value="Controller Only"/>
 			</input>
-				    
+			
+			<input name="IncludeDSN" label="Model: Include DSN" type="boolean" checked="false" tooltip="Choose whether to explicitly specify the Datasource Name in the generated model or not. (Useful when using multiple DSNs in one project)" />
 				   
 			<input name="Script" 
 				   label="Script Based CFC's" 
