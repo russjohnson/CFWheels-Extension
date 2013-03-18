@@ -46,7 +46,7 @@
 			<script type="text/javascript" src="includes/js/jquery.latest.min.js"></script>
 		</head>
 		<body>
-			<div>#message#</div>
+			<div class="messagebox-green">#message#</div>
 		</body>
 	</html>	
 	]]></body>

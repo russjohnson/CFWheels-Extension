@@ -89,7 +89,25 @@
 				<cfset loc.destinationFolderPath = modelPath>
 	            
 	            <!--- Read the template file --->
-                <cffile action="read" file="#loc.fromFolderPath#/model.cfm" variable="loc.file">
+                    <cffile action="read" file="#loc.fromFolderPath#/model.cfm" variable="loc.file">
+                                
+                    <!--- Replace the body of the model constructor --->
+                    <cfset loc.initCode = "">
+                    <cfif inputStruct.IncludeDSN>
+                            <cfif NOT(inputStruct.script)>
+                                    <cfset loc.initCode = loc.initCode & "<cfset ">
+                            </cfif>
+                            
+                            <cfset loc.initCode = loc.initCode & "dataSource('" & databaseName & "')">
+                            
+                            <cfif NOT(inputStruct.script)>
+                                    <cfset loc.initCode = loc.initCode & ">">
+                            <cfelse>
+                                    <cfset loc.initCode = loc.initCode & ";">
+                            </cfif>
+                    </cfif>
+                    
+                    <cfset loc.file = ReplaceNoCase(loc.file, "[ModelInitCode]", loc.initCode)>
 	            
 	            <!--- Write the file in the corresponding folder --->
 	            <cffile action="write" file="#loc.destinationFolderPath#/#Util.capitalize(arguments.name)#.cfc" output="#loc.file#" mode="777"> 
